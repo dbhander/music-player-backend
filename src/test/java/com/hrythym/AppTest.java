@@ -88,12 +88,93 @@ public class AppTest {
         assertFalse(wrongJwt.validateToken(token));
     }
 
-    // Simple Tests
-    @Test void testAddition() { assertEquals(4, 2 + 2); }
-    @Test void testSubtraction() { assertEquals(1, 3 - 2); }
-    @Test void testStringJoin() { assertEquals("music", "mu" + "sic"); }
-    @Test void testNonNull() { assertNotNull("song"); }
-    @Test void testBooleanTrue() { assertTrue(1 < 10); }
-    @Test void testArrayEquality() { assertArrayEquals(new int[]{1, 2}, new int[]{1, 2}); }
-    @Test void testListSize() { assertEquals(3, java.util.List.of("a", "b", "c").size()); }
+    @Test
+    void shouldReturnUserDetailsWithRoles() {
+        User user = new User();
+        user.setUsername("john");
+        user.setPassword("pass123");
+        user.setRoles(Set.of(Role.ROLE_USER));
+
+        UserRepository mockRepo = mock(UserRepository.class);
+        when(mockRepo.findByUsername("john")).thenReturn(Optional.of(user));
+
+        UserDetailsServiceImpl service = new UserDetailsServiceImpl(mockRepo);
+        UserDetails details = service.loadUserByUsername("john");
+
+        assertEquals("john", details.getUsername());
+        assertTrue(details.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_USER")));
+    }
+
+    @Test
+    void shouldLogPlaybackCorrectly() {
+        PlaybackLogRepository mockLogRepo = mock(PlaybackLogRepository.class);
+        LogService logService = new LogService(mockLogRepo);
+
+        User user = new User();
+        user.setId(10L);
+        Song song = new Song();
+        song.setId(101L);
+        song.setGenre("Pop");
+        song.setMood("Chill");
+
+        logService.logAction(user, song, "PLAY");
+
+        verify(mockLogRepo, times(1)).save(argThat(log ->
+                log.getUserId() == 10L &&
+                        log.getSongId() == 101L &&
+                        log.getGenre().equals("Pop") &&
+                        log.getMood().equals("Chill") &&
+                        log.getAction().equals("PLAY")
+        ));
+    }
+
+    @Test
+    void shouldGenerateValidJwt() {
+        JwtTokenProvider jwt = new JwtTokenProvider("mysecretkey1234567890", 100000L);
+        String token = jwt.generateToken("tester");
+
+        assertNotNull(token);
+        assertTrue(jwt.validateToken(token));
+        assertEquals("tester", jwt.getUsernameFromToken(token));
+    }
+
+    @Test
+    void shouldRejectInvalidJwt() {
+        JwtTokenProvider jwt1 = new JwtTokenProvider("secret1", 100000L);
+        JwtTokenProvider jwt2 = new JwtTokenProvider("secret2", 100000L);
+        String token = jwt1.generateToken("tester");
+
+        assertFalse(jwt2.validateToken(token)); // Should fail due to different secret
+    }
+
+    @Test
+    void shouldReturnUserWithoutRoles() {
+        User user = new User();
+        user.setUsername("noRoles");
+        user.setPassword("pwd");
+        user.setRoles(Set.of());
+
+        UserRepository mockRepo = mock(UserRepository.class);
+        when(mockRepo.findByUsername("noRoles")).thenReturn(Optional.of(user));
+
+        UserDetailsServiceImpl service = new UserDetailsServiceImpl(mockRepo);
+        UserDetails details = service.loadUserByUsername("noRoles");
+
+        assertTrue(details.getAuthorities().isEmpty());
+    }
+
+    @Test
+    void shouldHandleNullSongFieldsInLog() {
+        PlaybackLogRepository mockRepo = mock(PlaybackLogRepository.class);
+        LogService logService = new LogService(mockRepo);
+
+        User user = new User(); user.setId(1L);
+        Song song = new Song(); song.setId(99L); // no genre or mood
+
+        logService.logAction(user, song, "PAUSE");
+
+        verify(mockRepo, times(1)).save(any());
+    }
+
 }
