@@ -20,5 +20,5 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
 jwt:
-  secret: jdhnm4mkj5bs9hu4in5bgfgt9unhfyj7
+  secret: ${JWT_SECRET}
   expiration: 8640000
