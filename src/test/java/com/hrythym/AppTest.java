@@ -25,8 +25,8 @@ public class AppTest {
 
     @BeforeEach
     void setup() {
-        // Use a valid 32+ byte key
-        jwt = new JwtTokenProvider("testkey-must-be-32-bytes-long-secure", 8640000L);
+        // Automatically generate a secure 256-bit key for JWT
+        jwt = new JwtTokenProvider(8640000L);
     }
 
     @Test
@@ -84,7 +84,7 @@ public class AppTest {
 
     @Test
     void shouldInvalidateWrongToken() {
-        JwtTokenProvider wrongJwt = new JwtTokenProvider("a-different-valid-key-that-is-32-characters", 8640000L);
+        JwtTokenProvider wrongJwt = new JwtTokenProvider(8640000L);
         String token = jwt.generateToken("userx");
         assertFalse(wrongJwt.validateToken(token));
     }
@@ -132,7 +132,7 @@ public class AppTest {
 
     @Test
     void shouldGenerateValidJwt() {
-        JwtTokenProvider jwt = new JwtTokenProvider("this-key-is-long-enough-for-jwt-auth", 100000L);
+        JwtTokenProvider jwt = new JwtTokenProvider(100000L);
         String token = jwt.generateToken("tester");
 
         assertNotNull(token);
@@ -142,8 +142,8 @@ public class AppTest {
 
     @Test
     void shouldRejectInvalidJwt() {
-        JwtTokenProvider jwt1 = new JwtTokenProvider("this-is-key-one-32-bytes-secure", 100000L);
-        JwtTokenProvider jwt2 = new JwtTokenProvider("this-is-key-two-32-bytes-diff", 100000L);
+        JwtTokenProvider jwt1 = new JwtTokenProvider(100000L);
+        JwtTokenProvider jwt2 = new JwtTokenProvider(100000L);
         String token = jwt1.generateToken("tester");
 
         assertFalse(jwt2.validateToken(token)); // Should fail due to different secret
