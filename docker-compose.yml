@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   hrythym-db:
     image: postgres:15
