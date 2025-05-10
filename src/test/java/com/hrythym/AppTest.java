@@ -25,7 +25,8 @@ public class AppTest {
 
     @BeforeEach
     void setup() {
-        jwt = new JwtTokenProvider("testsecretkey1234567890123456789012345678", 8640000L);
+        // Use a valid 32+ byte key
+        jwt = new JwtTokenProvider("testkey-must-be-32-bytes-long-secure", 8640000L);
     }
 
     @Test
@@ -43,7 +44,7 @@ public class AppTest {
 
         assertEquals("testuser", details.getUsername());
         assertEquals("testpass", details.getPassword());
-        assertTrue(details.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_USER")));
+        assertTrue(details.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ROLE_USER")));
     }
 
     @Test
@@ -83,7 +84,7 @@ public class AppTest {
 
     @Test
     void shouldInvalidateWrongToken() {
-        JwtTokenProvider wrongJwt = new JwtTokenProvider("differentwrongsecret1234567890abcd", 8640000L);
+        JwtTokenProvider wrongJwt = new JwtTokenProvider("a-different-valid-key-that-is-32-characters", 8640000L);
         String token = jwt.generateToken("userx");
         assertFalse(wrongJwt.validateToken(token));
     }
@@ -103,7 +104,7 @@ public class AppTest {
 
         assertEquals("john", details.getUsername());
         assertTrue(details.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_USER")));
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ROLE_USER")));
     }
 
     @Test
@@ -123,15 +124,15 @@ public class AppTest {
         verify(mockLogRepo, times(1)).save(argThat(log ->
                 log.getUserId() == 10L &&
                         log.getSongId() == 101L &&
-                        log.getGenre().equals("Pop") &&
-                        log.getMood().equals("Chill") &&
-                        log.getAction().equals("PLAY")
+                        "Pop".equals(log.getGenre()) &&
+                        "Chill".equals(log.getMood()) &&
+                        "PLAY".equals(log.getAction())
         ));
     }
 
     @Test
     void shouldGenerateValidJwt() {
-        JwtTokenProvider jwt = new JwtTokenProvider("mysecretkey1234567890", 100000L);
+        JwtTokenProvider jwt = new JwtTokenProvider("this-key-is-long-enough-for-jwt-auth", 100000L);
         String token = jwt.generateToken("tester");
 
         assertNotNull(token);
@@ -141,8 +142,8 @@ public class AppTest {
 
     @Test
     void shouldRejectInvalidJwt() {
-        JwtTokenProvider jwt1 = new JwtTokenProvider("secret1", 100000L);
-        JwtTokenProvider jwt2 = new JwtTokenProvider("secret2", 100000L);
+        JwtTokenProvider jwt1 = new JwtTokenProvider("this-is-key-one-32-bytes-secure", 100000L);
+        JwtTokenProvider jwt2 = new JwtTokenProvider("this-is-key-two-32-bytes-diff", 100000L);
         String token = jwt1.generateToken("tester");
 
         assertFalse(jwt2.validateToken(token)); // Should fail due to different secret
@@ -176,5 +177,4 @@ public class AppTest {
 
         verify(mockRepo, times(1)).save(any());
     }
-
 }
