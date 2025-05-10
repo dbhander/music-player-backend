@@ -18,8 +18,8 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
-      - name: Run tests
-        run: mvn test
+      - name: Run tests (with detailed output)
+        run: mvn test -B -DtrimStackTrace=false
 
       - name: Build Docker image
         run: docker build -t hrythym-backend .
